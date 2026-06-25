@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WorldCup-0</title>
+<style>
+  :root {
+    --bg: #f0f0f5; --surface: #ffffff; --text: #1a1a2e; --muted: #7a7a8e;
+    --accent: #15803d; --green: #10b981; --red: #e74c3c; --gold: #f59e0b;
+    --orange: #f97316; --blue: #3b82f6; --purple: #8b5cf6; --border: #e2e2ea;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+
+  header { text-align: center; margin-bottom: 14px; }
+  header h1 { font-size: 2rem; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+  header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  .score-bar { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-radius: 14px; padding: 10px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 12px; }
+  .score-section { text-align: center; min-width: 60px; }
+  .score-label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .score-value { font-size: 1.5rem; font-weight: 900; }
+  .score-value.good { color: var(--green); }
+  .score-value.ok { color: var(--gold); }
+  .score-value.bad { color: var(--red); }
+  .progress-dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .dot.done { background: var(--accent); }
+  .dot.active { background: var(--gold); }
+
+  .feedback-bar { text-align: center; background: var(--surface); border-radius: 10px; padding: 10px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); font-size: 0.8rem; color: var(--muted); }
+  .feedback-bar .fb-rank { font-weight: 800; }
+
+  .country-card { background: var(--surface); border-radius: 18px; padding: 28px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-bottom: 12px; border: 2.5px solid var(--accent); transition: all 0.2s; }
+  .country-card.spinning { border-color: var(--gold); }
+  .country-card .flag { font-size: 52px; margin-bottom: 6px; transition: filter 0.1s; }
+  .country-card.spinning .flag { filter: blur(3px); }
+  .country-card .country-name { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+  .country-card.spinning .country-name { filter: blur(1.5px); opacity: 0.7; }
+  .country-card .year-label { font-size: 1.6rem; font-weight: 900; color: var(--accent); margin-top: 2px; }
+  .country-card.spinning .year-label { filter: blur(2px); opacity: 0.7; }
+  .country-card .squad-count { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+  .pos-group { margin-bottom: 10px; }
+  .pos-header { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; padding-left: 6px; }
+  .pick-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-radius: 10px; margin-bottom: 4px; cursor: pointer; border: 1.5px solid var(--border); transition: all 0.12s; }
+  .pick-row:active { transform: scale(0.98); }
+  .pick-row.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+  .pick-row .pr-rating { font-weight: 800; font-size: 0.65rem; min-width: 28px; text-align: center; text-transform: uppercase; letter-spacing: 0.3px; }
+  .pick-row .pr-name { font-weight: 700; font-size: 0.82rem; flex: 1; }
+  .pick-row .pr-pos { font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; }
+
+  .slot-choice { background: var(--surface); border: 2px solid var(--accent); border-radius: 14px; padding: 16px; margin-bottom: 12px; text-align: center; }
+  .slot-choice-title { font-weight: 800; font-size: 0.85rem; color: var(--accent); margin-bottom: 10px; }
+  .slot-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .slot-btn { padding: 9px 16px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface); font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.12s; }
+  .slot-btn:active { transform: scale(0.96); }
+
+  .respin-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: 14px; border: 2px dashed var(--accent); background: transparent; color: var(--accent); font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-bottom: 6px; transition: all 0.15s; }
+  .respin-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .respin-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .respin-row .respin-btn { flex: 1; margin-bottom: 0; }
+
+  .btn-primary { display: block; width: 100%; max-width: 320px; margin: 20px auto 0; padding: 14px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 800; cursor: pointer; transition: transform 0.1s; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-start { display: block; width: 100%; max-width: 320px; margin: 24px auto 0; padding: 16px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 1.1rem; font-weight: 800; cursor: pointer; letter-spacing: 0.3px; }
+
+  .btn-restart { display: block; width: 100%; max-width: 320px; margin: 8px auto 0; padding: 12px; border-radius: 14px; border: 2px solid var(--border); background: transparent; color: var(--muted); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+
+  .btn-spin { display: block; width: 100%; max-width: 320px; margin: 12px auto; padding: 14px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 800; cursor: pointer; }
+
+  .squad-slots { margin-top: 16px; }
+  .squad-slots .slots-title { font-size: 0.7rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px; }
+  .slot-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-radius: 10px; margin-bottom: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .slot-row.empty { opacity: 0.45; }
+  .slot-row .sr-emoji { font-size: 1.1rem; width: 24px; text-align: center; }
+  .slot-row .sr-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; min-width: 28px; }
+  .slot-row .sr-info { flex: 1; }
+  .slot-row .sr-name { font-weight: 700; font-size: 0.82rem; }
+  .slot-row .sr-meta { font-size: 0.65rem; color: var(--muted); }
+  .slot-row .sr-rating { font-weight: 800; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.3px; }
+
+  .final-screen { background: var(--surface); border-radius: 18px; padding: 28px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-top: 12px; }
+  .final-screen h2 { font-size: 1.4rem; }
+  .final-screen .final-emoji { font-size: 3.5rem; margin-bottom: 8px; }
+  .final-screen .final-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; max-width: 320px; margin-left: auto; margin-right: auto; }
+
+  .promo-box { display: block; width: 100%; max-width: 320px; margin: 16px auto 0; padding: 14px; border-radius: 14px; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; text-decoration: none; transition: all 0.15s; }
+  .promo-box:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .promo-box .promo-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+  .promo-box .promo-title span { color: #c9a84c; }
+  .promo-box .promo-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+  .how-to-play { background: var(--surface); border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; }
+  .how-to-play h3 { color: var(--accent); margin-bottom: 10px; font-size: 0.95rem; }
+  .how-to-play ol { padding-left: 18px; color: var(--muted); font-size: 0.85rem; line-height: 1.7; }
+  .how-to-play strong { color: var(--text); }
+
+  .footer { text-align: center; padding: 20px 0; color: var(--muted); font-size: 0.75rem; }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+<div class="footer">Squad data from FIFA World Cup history</div>
+<script>
+const DB_RAW = {
+"Argentina":{"2006":[["Juan Román Riquelme",91,"CM"],["Javier Mascherano",88,"CM"],["Carlos Tevez",86,"STR,WIN"],["Maxi Rodríguez",85,"WIN"],["Javier Zanetti",84,"DEF"],["Roberto Ayala",84,"DEF"],["Esteban Cambiasso",84,"CM"],["Lionel Messi",84,"WIN"],["Roberto Abbondanzieri",83,"GK"],["Gabriel Heinze",83,"DEF"],["Hernán Crespo",83,"STR"],["Pablo Aimar",79,"CM"],["Fabricio Coloccini",76,"DEF"],["Lucho González",72,"CM"],["Diego Milito",71,"STR"],["Leo Franco",68,"GK"]],"2010":[["Lionel Messi",91,"CM"],["Javier Mascherano",90,"CM"],["Carlos Tevez",88,"STR,WIN"],["Angel Di María",84,"WIN"],["Gonzalo Higuaín",83,"STR"],["Maxi Rodríguez",82,"WIN"],["Sergio Romero",79,"GK"],["Gabriel Heinze",78,"DEF"],["Nicolás Burdisso",77,"DEF"],["Martín Demichelis",76,"DEF"],["Diego Milito",73,"STR"],["Jonás Gutiérrez",72,"DEF"],["Juan Sebastián Verón",70,"CM"],["Mariano Andújar",68,"GK"],["Mario Bolatti",65,"CM"]],"2014":[["Lionel Messi",98,"CM"],["Javier Mascherano",92,"CM"],["Angel Di María",90,"WIN"],["Sergio Agüero",87,"STR"],["Sergio Romero",86,"GK"],["Pablo Zabaleta",81,"DEF"],["Ezequiel Lavezzi",81,"WIN"],["Gonzalo Higuaín",81,"STR"],["Marcos Rojo",79,"DEF"],["Fernando Gago",78,"CM"],["Federico Fernández",76,"DEF"],["Lucas Biglia",75,"CM"],["Rodrigo Palacio",75,"STR"],["Martín Demichelis",74,"DEF"],["Pablo Dybala",73,"CM"],["Erik Lamela",71,"WIN"],["Mariano Andújar",70,"GK"]],"2018":[["Lionel Messi",88,"CM"],["Sergio Agüero",84,"STR"],["Angel Di María",83,"WIN"],["Paulo Dybala",82,"STR"],["Javier Mascherano",81,"CM"],["Franco Armani",80,"GK"],["Nicolás Tagliafico",79,"DEF"],["Gonzalo Higuaín",77,"STR"],["Ever Banega",76,"CM"],["Marcos Rojo",75,"DEF"],["Sergio Romero",74,"GK"],["Gabriel Mercado",73,"DEF"],["Lucas Biglia",72,"CM"],["Maximiliano Meza",71,"WIN"],["Manuel Lanzini",71,"CM"],["Cristian Pavón",71,"STR"],["Federico Fazio",70,"DEF"],["Enzo Pérez",69,"CM"]],"2022":[["Lionel Messi",99,"CM"],["Emiliano Martínez",93,"GK"],["Julián Álvarez",88,"STR"],["Cristian Romero",87,"DEF"],["Enzo Fernández",85,"CM"],["Angel Di María",85,"WIN"],["Nicolás Otamendi",84,"DEF"],["Rodrigo De Paul",84,"CM"],["Lautaro Martínez",83,"STR"],["Alexis Mac Allister",82,"WIN"],["Nahuel Molina",80,"DEF"],["Paulo Dybala",79,"STR"],["Nicolás Tagliafico",78,"DEF"],["Leandro Paredes",77,"CM"],["Giovani Lo Celso",73,"CM"],["Gerónimo Rulli",71,"GK"],["Angel Correa",71,"STR"]],"2026":[["Lionel Messi",95,"CM"],["Emiliano Martínez",89,"GK"],["Lautaro Martínez",89,"STR"],["Enzo Fernández",88,"CM"],["Julián Álvarez",88,"STR"],["Cristian Romero",87,"DEF"],["Lisandro Martínez",84,"DEF"],["Alexis Mac Allister",84,"WIN"],["Rodrigo De Paul",82,"CM"],["Nicolás Otamendi",80,"DEF"],["Nahuel Molina",79,"DEF"],["Paulo Dybala",79,"STR"],["Juan Musso",75,"GK"],["Nico Paz",75,"CM"],["Nicolás Tagliafico",74,"DEF"],["Leandro Paredes",74,"CM"],["Thiago Almada",74,"STR"],["Nicolás González",73,"WIN"],["Gerónimo Rulli",70,"GK"]]},
+"Belgium":{"2014":[["Eden Hazard",90,"WIN"],["Thibaut Courtois",88,"GK"],["Vincent Kompany",88,"DEF"],["Kevin De Bruyne",87,"CM"],["Toby Alderweireld",85,"DEF"],["Jan Vertonghen",85,"DEF"],["Axel Witsel",83,"CM"],["Romelu Lukaku",83,"STR"],["Dries Mertens",82,"WIN"],["Simon Mignolet",77,"GK"],["Nacer Chadli",76,"WIN"],["Christian Benteke",76,"STR"],["Laurent Ciman",72,"DEF"],["Steven Defour",72,"CM"],["Divock Origi",72,"STR"]],"2018":[["Thibaut Courtois",92,"GK"],["Kevin De Bruyne",92,"CM"],["Eden Hazard",92,"WIN"],["Romelu Lukaku",89,"STR"],["Toby Alderweireld",86,"DEF"],["Jan Vertonghen",85,"DEF"],["Axel Witsel",85,"CM"],["Dries Mertens",85,"WIN"],["Vincent Kompany",84,"DEF"],["Yannick Carrasco",79,"WIN"],["Nacer Chadli",76,"DEF"],["Marouane Fellaini",76,"CM"],["Simon Mignolet",75,"GK"]],"2022":[["Thibaut Courtois",90,"GK"],["Kevin De Bruyne",90,"CM"],["Toby Alderweireld",82,"DEF"],["Romelu Lukaku",82,"STR"],["Axel Witsel",80,"CM"],["Leandro Trossard",80,"CM"],["Jan Vertonghen",79,"DEF"],["Koen Casteels",78,"GK"],["Eden Hazard",78,"WIN"],["Yannick Carrasco",77,"DEF"],["Thomas Meunier",76,"DEF"],["Lois Openda",75,"STR"],["Michy Batshuayi",71,"STR"]],"2026":[["Thibaut Courtois",87,"GK"],["Kevin De Bruyne",84,"CM"],["Lois Openda",83,"STR"],["Amadou Onana",82,"CM"],["Charles De Ketelaere",81,"CM"],["Leandro Trossard",80,"WIN"],["Romelu Lukaku",80,"STR"],["Arthur Theate",79,"DEF"],["Koen Casteels",77,"GK"],["Wout Faes",77,"DEF"],["Johan Bakayoko",77,"WIN"],["Thomas Meunier",73,"DEF"],["Orel Mangala",72,"CM"]]},
+"Brazil":{"2006":[["Ronaldinho",93,"WIN"],["Kaká",91,"CM"],["Roberto Carlos",90,"DEF"],["Cafu",88,"DEF"],["Ronaldo",87,"STR"],["Lúcio",86,"DEF"],["Gilberto Silva",84,"CM"],["Dida",82,"GK"],["Robinho",82,"WIN"],["Adriano",80,"STR"],["Juninho Pernambucano",79,"CM"],["Juan",75,"DEF"],["Zé Roberto",74,"CM"],["Rogério Ceni",73,"GK"],["Edmilson",73,"CM"],["Fred",70,"STR"]],"2010":[["Maicon",89,"DEF"],["Júlio César",87,"GK"],["Kaká",87,"CM"],["Luís Fabiano",85,"STR"],["Robinho",83,"WIN"],["Lúcio",82,"DEF"],["Gilberto Silva",78,"CM"],["Elano",77,"WIN"],["Juan",75,"DEF"],["Felipe Melo",73,"CM"],["Ramires",72,"CM"],["Michel Bastos",71,"DEF"],["Grafite",71,"STR"],["Nilmar",70,"STR"],["Rubinho",69,"GK"]],"2014":[["Neymar",94,"STR"],["Thiago Silva",88,"DEF"],["Dani Alves",87,"DEF"],["Marcelo",87,"DEF"],["David Luiz",85,"DEF"],["Hulk",82,"WIN"],["Oscar",81,"CM"],["Fernandinho",80,"CM"],["Júlio César",79,"GK"],["Luiz Gustavo",79,"CM"],["Willian",78,"WIN"],["Paulinho",76,"CM"],["Bernard",76,"WIN"],["Ramires",75,"CM"],["Dante",74,"DEF"],["Jefferson",70,"GK"],["Fred",70,"STR"],["Jo",66,"STR"]],"2018":[["Alisson",88,"GK"],["Casemiro",88,"CM"],["Thiago Silva",87,"DEF"],["Neymar",86,"WIN"],["Philippe Coutinho",86,"CM"],["Ederson",82,"GK"],["Marcelo",82,"DEF"],["Fernandinho",81,"CM"],["Roberto Firmino",81,"STR"],["Willian",80,"WIN"],["Gabriel Jesus",79,"STR"],["Danilo",78,"DEF"],["Miranda",77,"DEF"],["Douglas Costa",77,"WIN"],["Paulinho",76,"CM"]],"2022":[["Vinícius Júnior",93,"WIN"],["Alisson",91,"GK"],["Neymar",88,"CM"],["Casemiro",87,"CM"],["Eder Militão",85,"DEF"],["Lucas Paquetá",85,"CM"],["Ederson",84,"GK"],["Bruno Guimarães",84,"CM"],["Thiago Silva",83,"DEF"],["Raphinha",83,"WIN"],["Richarlison",83,"STR"],["Rodrygo",81,"WIN"],["Danilo",80,"DEF"],["Gabriel Jesus",80,"STR"],["Gabriel Martinelli",78,"STR"],["Alex Sandro",75,"DEF"],["Fred",73,"CM"]],"2026":[["Vinícius Júnior",96,"WIN"],["Alisson",88,"GK"],["Bruno Guimarães",86,"CM"],["Marquinhos",84,"DEF"],["Lucas Paquetá",84,"CM"],["Ederson",83,"GK"],["Eder Militão",83,"DEF"],["Raphinha",83,"WIN"],["Casemiro",81,"CM"],["Richarlison",81,"STR"],["Gabriel Magalhães",80,"DEF"],["Gabriel Martinelli",80,"WIN"],["Neymar",80,"CM"],["Endrick",78,"STR"],["Gabriel Jesus",77,"STR"],["Danilo",74,"DEF"],["Gerson",73,"CM"]]},
+"Canada":{"2022":[["Alphonso Davies",83,"WIN"],["Jonathan David",82,"STR"],["Milan Borjan",78,"GK"],["Alistair Johnston",76,"DEF"],["Tajon Buchanan",76,"WIN"],["Stephen Eustaquio",74,"CM"],["Maxime Crépeau",73,"GK"],["Steven Vitória",73,"DEF"],["Cyle Larin",73,"CM"],["Kamal Miller",72,"DEF"],["Atiba Hutchinson",72,"CM"],["Liam Millar",72,"WIN"],["Junior Hoilett",71,"STR"],["Sam Adekugbe",70,"DEF"],["Richie Laryea",70,"CM"]],"2026":[["Alphonso Davies",88,"DEF"],["Jonathan David",88,"STR"],["Dayne St. Clair",80,"GK"],["Stephen Eustaquio",79,"CM"],["Tajon Buchanan",79,"WIN"],["Alistair Johnston",78,"DEF"],["Ismael Kone",77,"CM"],["Moise Bombito",76,"DEF"],["Maxime Crépeau",74,"GK"],["Cyle Larin",74,"STR"],["Jonathan Osorio",73,"CM"],["Jacob Schaffelburg",73,"WIN"],["Luc de Fougerolles",72,"DEF"],["Tani Oluwaseyi",72,"STR"],["Owen Goodman",70,"GK"],["Ali Ahmed",70,"CM"]]},
+"Colombia":{"2014":[["James Rodríguez",94,"CM"],["Juan Cuadrado",84,"WIN"],["David Ospina",83,"GK"],["Jackson Martínez",82,"STR"],["Carlos Bacca",79,"STR"],["Mario Yepes",78,"DEF"],["Carlos Sánchez",78,"CM"],["Cristián Zapata",76,"DEF"],["Camilo Zúñiga",76,"DEF"],["Abel Aguilar",76,"CM"],["Teófilo Gutiérrez",76,"STR"],["Pablo Armero",74,"DEF"],["Faryd Mondragón",70,"GK"],["Eder Balanta",70,"WIN"]],"2018":[["James Rodríguez",85,"CM"],["Falcao",83,"STR"],["David Ospina",82,"GK"],["Dávinson Sánchez",82,"DEF"],["Juan Cuadrado",81,"WIN"],["Yerry Mina",79,"DEF"],["Juan Fernando Quintero",78,"CM"],["Wilmar Barrios",77,"CM"],["Oscar Murillo",76,"DEF"],["Luis Muriel",76,"WIN"],["Carlos Bacca",76,"STR"],["Carlos Sánchez",75,"CM"],["Camilo Vargas",73,"GK"],["Johan Mojica",72,"DEF"]],"2026":[["Luis Díaz",90,"WIN"],["Dávinson Sánchez",82,"DEF"],["Richard Rios",79,"CM"],["Camilo Vargas",78,"GK"],["Carlos Cuesta",78,"DEF"],["Daniel Muñoz",78,"DEF"],["Jhon Arias",78,"WIN"],["Jefferson Lerma",77,"CM"],["Mateus Uribe",76,"CM"],["James Rodríguez",76,"CM"],["Jhon Córdoba",76,"STR"],["Johan Mojica",74,"DEF"],["Kevin Mier",73,"GK"],["Juan Cuadrado",73,"WIN"],["Borja",72,"STR"],["Falcao",70,"STR"]]},
+"Croatia":{"2006":[["Darijo Srna",81,"WIN"],["Stipe Pletikosa",79,"GK"],["Niko Kranjčar",79,"CM"],["Josip Šimunić",77,"DEF"],["Eduardo da Silva",77,"STR"],["Robert Kovač",76,"DEF"],["Niko Kovač",75,"CM"],["Dario Šimić",74,"DEF"],["Dado Pršo",73,"CM"],["Ivan Klasnić",73,"STR"],["Jerko Leko",71,"CM"],["Vedran Runje",69,"GK"],["Stjepan Tomas",69,"DEF"]],"2010":[["Luka Modrić",82,"CM"],["Darijo Srna",80,"DEF"],["Niko Kranjčar",78,"WIN"],["Stipe Pletikosa",77,"GK"],["Ivan Rakitić",77,"CM"],["Vedran Ćorluka",76,"DEF"],["Eduardo da Silva",73,"STR"],["Robert Kovač",72,"DEF"],["Josip Šimunić",72,"DEF"],["Ivan Klasnić",72,"STR"],["Ognjen Vukojević",69,"CM"],["Nikica Jelavić",69,"STR"],["Vedran Runje",68,"GK"]],"2014":[["Luka Modrić",88,"CM"],["Ivan Rakitić",84,"CM"],["Mario Mandžukić",83,"STR"],["Ivan Perišić",82,"WIN"],["Darijo Srna",79,"DEF"],["Danijel Subašić",78,"GK"],["Vedran Ćorluka",77,"DEF"],["Marcelo Brozović",77,"CM"],["Mateo Kovačić",77,"CM"],["Stipe Pletikosa",73,"GK"],["Gordon Schildenfeld",71,"DEF"],["Nikica Jelavić",71,"STR"],["Ivan Strinić",70,"DEF"]],"2018":[["Luka Modrić",95,"CM"],["Danijel Subašić",85,"GK"],["Ivan Perišić",85,"WIN"],["Marcelo Brozović",84,"CM"],["Ivan Rakitić",84,"CM"],["Mateo Kovačić",83,"CM"],["Mario Mandžukić",82,"STR"],["Šime Vrsaljko",80,"DEF"],["Domagoj Vida",80,"DEF"],["Ante Rebić",79,"WIN"],["Dejan Lovren",78,"DEF"],["Andrej Kramarić",77,"STR"],["Milan Badelj",72,"CM"],["Ivan Strinić",71,"DEF"],["Lovre Kalinić",70,"GK"]],"2022":[["Luka Modrić",90,"CM"],["Dominik Livaković",87,"GK"],["Marcelo Brozović",83,"CM"],["Mateo Kovačić",83,"CM"],["Ivan Perišić",83,"WIN"],["Andrej Kramarić",80,"STR"],["Josip Juranović",79,"DEF"],["Nikola Vlašić",78,"WIN"],["Dejan Lovren",74,"DEF"],["Borna Sosa",74,"DEF"],["Ante Rebić",74,"WIN"],["Domagoj Vida",73,"DEF"],["Bruno Petković",72,"STR"],["Ivica Ivušić",71,"GK"],["Marko Livaja",70,"STR"]],"2026":[["Dominik Livaković",85,"GK"],["Mateo Kovačić",83,"CM"],["Luka Modrić",83,"CM"],["Andrej Kramarić",80,"STR"],["Josip Šutalo",79,"DEF"],["Nikola Vlašić",79,"WIN"],["Martin Baturina",77,"CM"],["Duje Ćaleta-Car",76,"DEF"],["Josip Juranović",76,"DEF"],["Ivan Perišić",76,"WIN"],["Mario Pašalić",76,"STR"],["Luka Sucic",75,"CM"],["Borna Sosa",74,"DEF"],["Ivica Ivušić",71,"GK"],["Ante Rebić",71,"WIN"],["Mislav Oršić",71,"STR"]]},
+"England":{"2006":[["Steven Gerrard",89,"CM"],["Rio Ferdinand",88,"DEF"],["John Terry",87,"DEF"],["Frank Lampard",87,"CM"],["Ashley Cole",86,"DEF"],["Wayne Rooney",85,"CM,STR"],["David Beckham",83,"WIN"],["Paul Robinson",80,"GK"],["Gary Neville",80,"DEF"],["Joe Cole",78,"CM"],["David James",75,"GK"],["Michael Owen",75,"STR"],["Peter Crouch",72,"STR"]],"2010":[["Frank Lampard",84,"CM"],["John Terry",83,"DEF"],["Ashley Cole",83,"DEF"],["Steven Gerrard",83,"CM"],["Wayne Rooney",82,"CM,STR"],["Rio Ferdinand",79,"DEF"],["Glen Johnson",75,"DEF"],["Gareth Barry",75,"CM"],["Jermain Defoe",75,"STR"],["James Milner",73,"WIN"],["David James",72,"GK"],["Aaron Lennon",72,"WIN"],["Robert Green",70,"GK"],["Emile Heskey",70,"STR"]],"2014":[["Joe Hart",82,"GK"],["Daniel Sturridge",80,"STR"],["Wayne Rooney",79,"CM,STR"],["Gary Cahill",78,"DEF"],["Steven Gerrard",78,"CM"],["Raheem Sterling",77,"WIN"],["Leighton Baines",76,"DEF"],["Phil Jagielka",75,"DEF"],["Jordan Henderson",74,"CM"],["Ross Barkley",70,"CM"],["Fraser Forster",69,"GK"],["Andy Carroll",68,"STR"]],"2018":[["Harry Kane",88,"STR"],["Kyle Walker",82,"DEF"],["Dele Alli",82,"CM"],["Raheem Sterling",82,"WIN"],["Jordan Pickford",81,"GK"],["Harry Maguire",80,"DEF"],["John Stones",79,"DEF"],["Jordan Henderson",79,"CM"],["Jamie Vardy",77,"STR"],["Marcus Rashford",76,"STR"],["Jesse Lingard",75,"WIN"],["Eric Dier",74,"CM"],["Ashley Young",73,"DEF"],["Jack Butland",72,"GK"]],"2022":[["Jude Bellingham",89,"CM"],["Harry Kane",88,"STR"],["Phil Foden",87,"WIN"],["Declan Rice",86,"CM"],["Bukayo Saka",85,"WIN"],["Jordan Pickford",84,"GK"],["Trent Alexander-Arnold",84,"DEF"],["John Stones",83,"DEF"],["Raheem Sterling",80,"WIN"],["Marcus Rashford",80,"STR"],["Nick Pope",78,"GK"],["Jordan Henderson",78,"CM"],["Harry Maguire",77,"DEF"],["Luke Shaw",77,"DEF"],["Callum Wilson",72,"STR"]],"2026":[["Jude Bellingham",93,"CM"],["Harry Kane",90,"STR"],["Declan Rice",89,"CM"],["Bukayo Saka",89,"WIN"],["Phil Foden",89,"WIN"],["Cole Palmer",88,"CM"],["Trent Alexander-Arnold",87,"DEF"],["Jordan Pickford",83,"GK"],["John Stones",83,"DEF"],["Marc Guehi",83,"DEF"],["Kobbie Mainoo",82,"CM"],["Ollie Watkins",82,"STR"],["Anthony Gordon",79,"WIN"],["Luke Shaw",77,"DEF"],["Dean Henderson",76,"GK"],["Dominic Solanke",76,"STR"]]},
+"France":{"2006":[["Zinedine Zidane",99,"CM"],["Thierry Henry",91,"STR"],["Claude Makélélé",90,"CM"],["Lilian Thuram",86,"DEF"],["Patrick Vieira",85,"CM"],["Franck Ribéry",84,"WIN"],["William Gallas",83,"DEF"],["Fabien Barthez",82,"GK"],["Eric Abidal",82,"DEF"],["Grégory Coupet",80,"GK"],["David Trezeguet",80,"STR"],["Willy Sagnol",79,"DEF"],["Sylvain Wiltord",72,"WIN"],["Louis Saha",72,"STR"],["Alou Diarra",70,"CM"]],"2010":[["Franck Ribéry",85,"WIN"],["Hugo Lloris",83,"GK"],["Patrice Evra",82,"DEF"],["Eric Abidal",79,"DEF"],["Nicolas Anelka",79,"STR"],["Steve Mandanda",77,"GK"],["Lassana Diarra",77,"CM"],["Samir Nasri",77,"CM"],["Jérémy Toulalan",75,"CM"],["Yoann Gourcuff",75,"CM"],["André-Pierre Gignac",73,"STR"],["Sébastien Squillaci",72,"DEF"]],"2014":[["Karim Benzema",89,"CM,STR"],["Hugo Lloris",87,"GK"],["Raphaël Varane",87,"DEF"],["Franck Ribéry",85,"WIN"],["Blaise Matuidi",84,"CM"],["Mamadou Sakho",82,"DEF"],["Paul Pogba",82,"CM"],["Antoine Griezmann",82,"WIN"],["Yohan Cabaye",81,"CM"],["Patrice Evra",79,"DEF"],["Olivier Giroud",79,"STR"],["Steve Mandanda",78,"GK"],["Mathieu Valbuena",77,"WIN"],["Mathieu Debuchy",76,"DEF"]],"2018":[["Kylian Mbappé",96,"STR,WIN"],["N'Golo Kanté",94,"CM"],["Antoine Griezmann",92,"CM"],["Raphaël Varane",90,"DEF"],["Hugo Lloris",88,"GK"],["Paul Pogba",84,"CM"],["Samuel Umtiti",83,"DEF"],["Lucas Hernández",82,"DEF"],["Blaise Matuidi",82,"CM"],["Olivier Giroud",80,"STR"],["Benjamin Pavard",79,"DEF"],["Ousmane Dembélé",79,"WIN"],["Steve Mandanda",75,"GK"]],"2022":[["Kylian Mbappé",97,"STR"],["Antoine Griezmann",88,"CM"],["Aurélien Tchouaméni",85,"CM"],["Ousmane Dembélé",85,"WIN"],["Hugo Lloris",84,"GK"],["Jules Koundé",84,"DEF"],["Raphaël Varane",84,"DEF"],["Theo Hernández",83,"DEF"],["Dayot Upamecano",82,"DEF"],["Olivier Giroud",82,"STR"],["Adrien Rabiot",80,"CM"],["Eduardo Camavinga",80,"CM"],["Kingsley Coman",80,"WIN"],["Marcus Thuram",79,"STR"],["Alphonse Areola",75,"GK"]],"2026":[["Kylian Mbappé",99,"STR"],["Aurélien Tchouaméni",88,"CM"],["Mike Maignan",87,"GK"],["Jules Koundé",87,"DEF"],["Ousmane Dembélé",86,"WIN"],["Theo Hernández",85,"DEF"],["Eduardo Camavinga",85,"CM"],["Marcus Thuram",84,"STR"],["Dayot Upamecano",83,"DEF"],["Antoine Griezmann",83,"CM"],["Warren Zaïre-Emery",82,"CM"],["Bradley Barcola",81,"WIN"],["Alphonse Areola",77,"GK"],["Jonathan Clauss",76,"DEF"],["Adrien Rabiot",76,"CM"],["Randal Kolo Muani",76,"STR"]]},
+"Germany":{"2006":[["Michael Ballack",91,"CM"],["Philipp Lahm",87,"DEF"],["Miroslav Klose",87,"STR"],["Jens Lehmann",85,"GK"],["Oliver Kahn",83,"GK"],["Lukas Podolski",83,"WIN"],["Torsten Frings",82,"CM"],["Per Mertesacker",80,"DEF"],["Bastian Schweinsteiger",80,"CM"],["Christoph Metzelder",77,"DEF"],["Arne Friedrich",76,"DEF"],["Bernd Schneider",74,"WIN"],["Oliver Neuville",74,"STR"],["Thomas Hitzlsperger",72,"CM"],["David Odonkor",71,"WIN"]],"2010":[["Philipp Lahm",91,"DEF"],["Manuel Neuer",89,"GK"],["Mesut Özil",88,"CM"],["Thomas Müller",88,"WIN"],["Bastian Schweinsteiger",85,"CM"],["Sami Khedira",84,"CM"],["Miroslav Klose",84,"STR"],["Jérôme Boateng",83,"DEF"],["Per Mertesacker",82,"DEF"],["Lukas Podolski",81,"WIN"],["Holger Badstuber",78,"DEF"],["Toni Kroos",78,"CM"],["Tim Wiese",70,"GK"],["Stefan Kießling",70,"STR"]],"2014":[["Manuel Neuer",97,"GK"],["Toni Kroos",94,"CM"],["Thomas Müller",92,"WIN"],["Philipp Lahm",91,"DEF"],["Mats Hummels",91,"DEF"],["Jérôme Boateng",88,"DEF"],["Mesut Özil",87,"CM"],["Bastian Schweinsteiger",86,"CM"],["Miroslav Klose",86,"STR"],["Sami Khedira",85,"CM"],["Mario Götze",85,"CM"],["André Schürrle",80,"WIN"],["Lukas Podolski",80,"STR"],["Benedikt Höwedes",78,"DEF"],["Roman Weidenfeller",77,"GK"]],"2018":[["Toni Kroos",88,"CM"],["Marc-André ter Stegen",86,"GK"],["Joshua Kimmich",85,"DEF"],["Manuel Neuer",84,"GK"],["Mats Hummels",83,"DEF"],["Thomas Müller",82,"WIN"],["Ilkay Gündoğan",81,"CM"],["Leroy Sané",80,"WIN"],["Jérôme Boateng",79,"DEF"],["Mesut Özil",77,"CM"],["Sami Khedira",76,"CM"],["Julian Brandt",76,"WIN"],["Timo Werner",76,"STR"],["Mario Gómez",72,"STR"],["Marvin Plattenhardt",71,"DEF"]],"2022":[["Joshua Kimmich",88,"DEF"],["Jamal Musiala",88,"WIN"],["Manuel Neuer",86,"GK"],["Marc-André ter Stegen",85,"GK"],["Antonio Rüdiger",85,"DEF"],["Ilkay Gündoğan",85,"CM"],["Leroy Sané",84,"WIN"],["Niklas Süle",82,"DEF"],["Leon Goretzka",82,"CM"],["Kai Havertz",82,"CM"],["Serge Gnabry",80,"WIN"],["Niclas Füllkrug",79,"STR"],["David Raum",75,"DEF"],["Timo Werner",75,"STR"]],"2026":[["Florian Wirtz",93,"CM"],["Jamal Musiala",91,"WIN"],["Joshua Kimmich",87,"DEF"],["Marc-André ter Stegen",86,"GK"],["Antonio Rüdiger",86,"DEF"],["Kai Havertz",84,"CM"],["Ilkay Gündoğan",83,"CM"],["Leroy Sané",82,"WIN"],["Manuel Neuer",81,"GK"],["Jonathan Tah",81,"DEF"],["Niclas Füllkrug",81,"STR"],["Robert Andrich",79,"CM"],["Benjamin Henrichs",74,"DEF"],["Deniz Undav",74,"STR"],["Oliver Baumann",73,"GK"]]},
+"Italy":{"2006":[["Gianluigi Buffon",94,"GK"],["Fabio Cannavaro",93,"DEF"],["Andrea Pirlo",91,"CM"],["Alessandro Nesta",90,"DEF"],["Gennaro Gattuso",85,"CM"],["Francesco Totti",85,"CM"],["Gianluca Zambrotta",84,"DEF"],["Luca Toni",84,"STR"],["Daniele De Rossi",83,"CM"],["Fabio Grosso",79,"DEF"],["Mauro Camoranesi",78,"WIN"],["Marco Materazzi",77,"DEF"],["Alberto Gilardino",77,"STR"],["Angelo Peruzzi",76,"GK"],["Simone Perrotta",75,"WIN"]],"2010":[["Gianluigi Buffon",87,"GK"],["Andrea Pirlo",87,"CM"],["Giorgio Chiellini",82,"DEF"],["Daniele De Rossi",82,"CM"],["Fabio Cannavaro",78,"DEF"],["Gennaro Gattuso",76,"CM"],["Gianluca Zambrotta",75,"DEF"],["Luca Toni",75,"STR"],["Federico Marchetti",74,"GK"],["Riccardo Montolivo",74,"CM"],["Domenico Criscito",72,"DEF"],["Fabio Quagliarella",72,"STR"],["Simone Perrotta",71,"WIN"],["Vincenzo Iaquinta",71,"STR"]],"2014":[["Giorgio Chiellini",87,"DEF"],["Andrea Pirlo",85,"CM"],["Gianluigi Buffon",84,"GK"],["Leonardo Bonucci",84,"DEF"],["Andrea Barzagli",83,"DEF"],["Daniele De Rossi",82,"CM"],["Marco Verratti",82,"CM"],["Mario Balotelli",81,"STR"],["Lorenzo Insigne",77,"WIN"],["Salvatore Sirigu",74,"GK"],["Ignazio Abate",74,"DEF"],["Antonio Candreva",74,"WIN"],["Ciro Immobile",73,"STR"],["Graziano Pellè",70,"STR"]]},
+"Japan":{"2006":[["Hidetoshi Nakata",80,"CM"],["Shunsuke Nakamura",80,"WIN"],["Yoshikatsu Kawaguchi",79,"GK"],["Yuji Nakazawa",77,"DEF"],["Seigo Narazaki",73,"GK"],["Tsuneyasu Miyamoto",72,"DEF"],["Shinji Ono",72,"CM"],["Koji Nakata",71,"CM"],["Naohiro Takahara",71,"STR"],["Akira Kaji",69,"DEF"],["Marcus Tulio Tanaka",69,"DEF"],["Atsushi Yanagisawa",66,"STR"]],"2010":[["Keisuke Honda",82,"CM"],["Yuto Nagatomo",79,"DEF"],["Makoto Hasebe",79,"CM"],["Eiji Kawashima",78,"GK"],["Shinji Kagawa",78,"WIN"],["Yuji Nakazawa",76,"DEF"],["Yasuhito Endō",76,"CM"],["Atsuto Uchida",75,"DEF"],["Shinji Okazaki",74,"STR"],["Marcus Tulio Tanaka",71,"DEF"],["Seigo Narazaki",70,"GK"],["Daisuke Matsui",70,"WIN"],["Takayuki Morimoto",65,"STR"]],"2014":[["Keisuke Honda",83,"CM"],["Shinji Kagawa",82,"CM"],["Yuto Nagatomo",80,"DEF"],["Makoto Hasebe",80,"CM"],["Maya Yoshida",79,"DEF"],["Shinji Okazaki",79,"STR"],["Eiji Kawashima",78,"GK"],["Atsuto Uchida",74,"DEF"],["Yasuhito Endō",74,"CM"],["Gotoku Sakai",71,"DEF"],["Yuya Osako",71,"STR"],["Shuichi Gonda",68,"GK"]],"2018":[["Shinji Kagawa",80,"CM"],["Maya Yoshida",78,"DEF"],["Makoto Hasebe",78,"CM"],["Yuto Nagatomo",77,"DEF"],["Keisuke Honda",77,"CM"],["Eiji Kawashima",76,"GK"],["Shinji Okazaki",76,"STR"],["Yuya Osako",75,"STR"],["Takashi Inui",74,"WIN"],["Gaku Shibasaki",73,"CM"],["Hiroki Sakai",72,"DEF"],["Yoshinori Muto",71,"STR"],["Gotoku Sakai",70,"DEF"],["Kosuke Nakamura",69,"GK"]],"2022":[["Takehiro Tomiyasu",82,"DEF"],["Wataru Endo",81,"CM"],["Kaoru Mitoma",81,"WIN"],["Ritsu Doan",81,"WIN"],["Shuichi Gonda",80,"GK"],["Daichi Kamada",80,"CM"],["Ko Itakura",79,"DEF"],["Hidemasa Morita",77,"CM"],["Takumi Minamino",77,"CM"],["Maya Yoshida",76,"DEF"],["Ayase Ueda",75,"STR"],["Zion Suzuki",73,"GK"],["Yuto Nagatomo",71,"DEF"]],"2026":[["Kaoru Mitoma",86,"WIN"],["Takehiro Tomiyasu",83,"DEF"],["Wataru Endo",83,"CM"],["Ritsu Doan",83,"WIN"],["Ko Itakura",81,"DEF"],["Daichi Kamada",81,"CM"],["Zion Suzuki",79,"GK"],["Hidemasa Morita",79,"CM"],["Ayase Ueda",79,"STR"],["Takumi Minamino",78,"CM"],["Ao Tanaka",77,"CM"],["Shuichi Gonda",75,"GK"],["Shogo Taniguchi",75,"DEF"],["Takuma Asano",73,"STR"]]},
+"Mexico":{"2006":[["Rafa Márquez",83,"DEF"],["Oswaldo Sánchez",79,"GK"],["Cuauhtémoc Blanco",79,"CM,STR"],["Carlos Salcido",77,"DEF"],["Gerardo Torrado",77,"CM"],["Pavel Pardo",75,"CM"],["Jared Borgetti",75,"STR"],["Francisco Rodríguez",74,"DEF"],["Zinha",74,"CM"],["Guillermo Ochoa",73,"GK"],["Omar Bravo",73,"STR"],["Jaime Lozano",71,"CM"],["Mario Méndez",70,"DEF"],["José Fonseca",68,"STR"]],"2010":[["Guillermo Ochoa",82,"GK"],["Rafa Márquez",82,"DEF"],["Carlos Salcido",79,"DEF"],["Andrés Guardado",79,"CM"],["Javier Hernández",79,"STR"],["Giovani dos Santos",77,"CM"],["Gerardo Torrado",75,"CM"],["Cuauhtémoc Blanco",74,"CM,STR"],["Carlos Vela",74,"STR"],["Francisco Rodríguez",73,"DEF"],["Pablo Barrera",72,"WIN"],["Oscar Pérez",71,"GK"],["Guillermo Franco",70,"STR"],["Israel Castro",69,"DEF"]],"2014":[["Guillermo Ochoa",86,"GK"],["Javier Hernández",85,"STR"],["Andrés Guardado",81,"CM"],["Héctor Herrera",80,"CM"],["Carlos Vela",80,"WIN"],["Rafa Márquez",79,"DEF"],["Miguel Layún",77,"DEF"],["Oribe Peralta",77,"STR"],["Giovani dos Santos",76,"CM"],["Carlos Salcido",74,"DEF"],["Paul Aguilar",72,"DEF"],["Jesús Corona",71,"GK"]],"2018":[["Guillermo Ochoa",84,"GK"],["Carlos Vela",84,"WIN"],["Hirving Lozano",83,"WIN"],["Héctor Herrera",82,"CM"],["Javier Hernández",82,"STR"],["Andrés Guardado",80,"CM"],["Héctor Moreno",79,"DEF"],["Raúl Jiménez",77,"STR"],["Miguel Layún",76,"DEF"],["Jesús Corona",74,"GK"],["Carlos Salcido",70,"DEF"],["Hugo Ayala",70,"DEF"]],"2022":[["Guillermo Ochoa",82,"GK"],["Edson Álvarez",82,"CM"],["Hirving Lozano",82,"WIN"],["Raúl Jiménez",78,"STR"],["Héctor Moreno",75,"DEF"],["Héctor Herrera",75,"CM"],["César Montes",74,"DEF"],["Andrés Guardado",74,"CM"],["Jesús Gallardo",73,"DEF"],["Orbelín Pineda",73,"CM"],["Henry Martín",73,"STR"],["Rodolfo Cota",71,"GK"],["Alexis Vega",71,"WIN"],["Gerardo Arteaga",70,"DEF"]],"2026":[["Santiago Giménez",83,"STR"],["Edson Álvarez",80,"DEF"],["Hirving Lozano",78,"WIN"],["Guillermo Ochoa",77,"GK"],["César Montes",75,"DEF"],["Raúl Jiménez",75,"STR"],["Carlos Acevedo",73,"GK"],["Orbelín Pineda",73,"CM"],["Henry Martín",73,"STR"],["Jesús Gallardo",72,"DEF"],["Luis Romo",72,"CM"],["Roberto Alvarado",72,"WIN"],["Raúl Rangel",70,"GK"],["Jorge Sánchez",70,"DEF"],["Carlos Rodríguez",70,"CM"]]},
+"Morocco":{"2006":[["Talal El Karkouri",73,"DEF"],["Khalid Fouhami",72,"GK"],["Noureddine Naybet",72,"DEF"],["Youssouf Hadji",72,"CM"],["Youssef Safri",71,"CM"],["Marouane Chamakh",71,"STR"],["Abdelkader El Jaroui",69,"DEF"],["Nadir Lamyaghri",67,"GK"],["Jawad Zairi",67,"WIN"],["Tahar El Khalej",66,"CM"],["Hicham Mahdoufi",64,"STR"]],"2018":[["Mehdi Benatia",83,"DEF"],["Hakim Ziyech",83,"CM"],["Achraf Hakimi",80,"DEF"],["Munir El Kajoui",72,"GK"],["Faycal Fajr",72,"CM"],["Mbark Boussoufa",72,"CM"],["Amine Harit",72,"CM"],["Nordin Amrabat",72,"WIN"],["Khalid Boutaib",72,"STR"],["Younes Belhanda",71,"STR"],["Manuel Da Costa",70,"DEF"],["Ayoub El Kaabi",69,"STR"],["Ahmad Red",67,"GK"],["Hamza Mendyl",67,"DEF"]],"2022":[["Yassine Bounou",89,"GK"],["Achraf Hakimi",88,"DEF"],["Sofyan Amrabat",87,"CM"],["Hakim Ziyech",85,"CM"],["Nayef Aguerd",82,"DEF"],["Youssef En-Nesyri",82,"STR"],["Noussair Mazraoui",81,"DEF"],["Romain Saïss",80,"DEF"],["Azzedine Ounahi",80,"CM"],["Sofiane Boufal",79,"WIN"],["Jawad El Yamiq",73,"DEF"],["Ahmed Tagnaouti",72,"GK"],["Walid Cheddira",70,"STR"]],"2026":[["Achraf Hakimi",89,"DEF"],["Yassine Bounou",86,"GK"],["Sofyan Amrabat",85,"CM"],["Hakim Ziyech",83,"CM"],["Youssef En-Nesyri",83,"STR"],["Noussair Mazraoui",82,"DEF"],["Azzedine Ounahi",82,"CM"],["Nayef Aguerd",80,"DEF"],["Bilal El Khannous",77,"CM"],["Sofiane Boufal",75,"WIN"],["Yahia Attiat-Allah",74,"DEF"],["Ahmed Tagnaouti",72,"GK"],["Munir El Haddadi",71,"STR"]]},
+"Netherlands":{"2006":[["Edwin van der Sar",88,"GK"],["Ruud van Nistelrooy",85,"STR"],["Giovanni van Bronckhorst",84,"DEF"],["Arjen Robben",84,"WIN"],["Mark van Bommel",83,"CM"],["Wesley Sneijder",83,"CM"],["Clarence Seedorf",81,"CM"],["Rafael van der Vaart",80,"CM"],["Robin van Persie",79,"STR"],["Edgar Davids",78,"CM"],["Khalid Boulahrouz",77,"DEF"],["Dirk Kuyt",77,"WIN"],["Joris Mathijsen",76,"DEF"],["Maarten Stekelenburg",75,"GK"],["Andre Ooijer",72,"DEF"]],"2010":[["Wesley Sneijder",93,"CM"],["Arjen Robben",91,"WIN"],["Robin van Persie",84,"STR"],["Maarten Stekelenburg",82,"GK"],["Giovanni van Bronckhorst",82,"DEF"],["Mark van Bommel",82,"CM"],["Nigel de Jong",81,"CM"],["Rafael van der Vaart",81,"CM"],["Klaas-Jan Huntelaar",80,"STR"],["Dirk Kuyt",79,"WIN"],["John Heitinga",78,"DEF"],["Joris Mathijsen",77,"DEF"],["Gregory van der Wiel",75,"DEF"],["Eljero Elia",70,"WIN"],["Sander Boschker",67,"GK"]],"2014":[["Arjen Robben",94,"WIN"],["Robin van Persie",91,"STR"],["Wesley Sneijder",86,"CM"],["Klaas-Jan Huntelaar",81,"STR"],["Daley Blind",80,"DEF"],["Ron Vlaar",80,"DEF"],["Nigel de Jong",80,"CM"],["Tim Krul",79,"GK"],["Memphis Depay",78,"WIN"],["Jasper Cillessen",77,"GK"],["Kevin Strootman",77,"CM"],["Bruno Martins Indi",74,"DEF"],["Jonathan de Guzman",72,"CM"]],"2022":[["Virgil van Dijk",90,"DEF"],["Frenkie de Jong",88,"CM"],["Matthijs de Ligt",86,"DEF"],["Cody Gakpo",85,"STR"],["Denzel Dumfries",82,"DEF"],["Teun Koopmeiners",81,"CM"],["Memphis Depay",80,"STR"],["Andries Noppert",77,"GK"],["Wout Weghorst",77,"STR"],["Justin Bijlow",76,"GK"],["Daley Blind",76,"DEF"],["Steven Berghuis",74,"WIN"],["Davy Klaassen",72,"CM"]],"2026":[["Virgil van Dijk",89,"DEF"],["Cody Gakpo",88,"STR"],["Frenkie de Jong",87,"CM"],["Matthijs de Ligt",85,"DEF"],["Jurriën Timber",84,"DEF"],["Ryan Gravenberch",83,"CM"],["Xavi Simons",83,"WIN"],["Bart Verbruggen",82,"GK"],["Tijjani Reijnders",82,"CM"],["Denzel Dumfries",80,"DEF"],["Brian Brobbey",79,"STR"],["Donyell Malen",78,"WIN"],["Memphis Depay",76,"STR"],["Remko Pasveer",75,"GK"]]},
+"Norway":{"2026":[["Erling Haaland",97,"STR"],["Martin Ødegaard",91,"CM"],["Sander Berge",82,"CM"],["Alexander Sørloth",82,"STR"],["Orjan Nyland",79,"GK"],["Leo Ostigard",79,"DEF"],["Kristoffer Ajer",78,"DEF"],["Mohamed Elyounoussi",77,"WIN"],["Julian Ryerson",76,"DEF"],["Kristian Thorstvedt",74,"CM"],["Morten Thorsby",73,"CM"],["Jens Petter Hauge",73,"WIN"],["Ola Solbakken",73,"STR"],["Marcus Holmgren Pedersen",72,"DEF"],["Egil Selvik",70,"GK"]]},
+"Portugal":{"2006":[["Deco",88,"CM"],["Cristiano Ronaldo",88,"WIN"],["Ricardo Carvalho",86,"DEF"],["Ricardo",82,"GK"],["Luís Figo",82,"WIN"],["Maniche",81,"CM"],["Pauleta",79,"STR"],["Fernando Meira",78,"DEF"],["Simão",77,"WIN"],["Nuno Valente",75,"DEF"],["Costinha",75,"CM"],["Nuno Gomes",74,"STR"],["Paulo Ferreira",73,"DEF"],["Quim",72,"GK"],["Petit",69,"CM"]],"2010":[["Cristiano Ronaldo",93,"WIN"],["Ricardo Carvalho",83,"DEF"],["Bruno Alves",80,"DEF"],["Raúl Meireles",80,"CM"],["Fábio Coentrão",79,"DEF"],["João Moutinho",78,"CM"],["Eduardo",77,"GK"],["Rui Patrício",76,"GK"],["Miguel Veloso",74,"CM"],["Tiago",74,"CM"],["Simão",73,"WIN"],["Paulo Ferreira",72,"DEF"],["Hugo Almeida",71,"STR"],["Danny",71,"STR"],["Liedson",69,"STR"]],"2014":[["Cristiano Ronaldo",91,"WIN"],["Pepe",84,"DEF"],["Rui Patrício",83,"GK"],["Bruno Alves",81,"DEF"],["Fábio Coentrão",80,"DEF"],["William Carvalho",80,"CM"],["Nani",79,"WIN"],["João Moutinho",77,"CM"],["Raúl Meireles",75,"CM"],["João Pereira",71,"DEF"],["Hugo Almeida",70,"STR"],["Beto",69,"GK"],["Eder",66,"STR"]],"2018":[["Cristiano Ronaldo",91,"WIN"],["Rui Patrício",86,"GK"],["Bernardo Silva",85,"WIN"],["Pepe",82,"DEF"],["Raphaël Guerreiro",81,"DEF"],["William Carvalho",80,"CM"],["João Moutinho",79,"CM"],["José Fonte",77,"DEF"],["Anthony Lopes",75,"GK"],["Ricardo Quaresma",75,"WIN"],["André Silva",74,"STR"],["Gonçalo Guedes",73,"STR"],["Cédric Soares",72,"DEF"]],"2022":[["Rúben Dias",90,"DEF"],["Bernardo Silva",88,"WIN"],["João Cancelo",87,"DEF"],["Bruno Fernandes",87,"CM"],["Diogo Costa",84,"GK"],["Rafael Leão",84,"WIN"],["Rúben Neves",83,"CM"],["Rui Patrício",82,"GK"],["Nuno Mendes",82,"DEF"],["João Palhinha",82,"CM"],["Vitinha",82,"CM"],["João Félix",82,"WIN"],["Raphaël Guerreiro",81,"DEF"],["Cristiano Ronaldo",80,"STR"],["Gonçalo Ramos",80,"STR"],["André Silva",75,"STR"]],"2026":[["Rúben Dias",89,"DEF"],["Bruno Fernandes",89,"CM"],["Rafael Leão",87,"WIN"],["Bernardo Silva",87,"WIN"],["Diogo Costa",85,"GK"],["Nuno Mendes",84,"DEF"],["Vitinha",84,"CM"],["João Palhinha",84,"CM"],["João Cancelo",83,"DEF"],["Pedro Neto",82,"WIN"],["Gonçalo Ramos",81,"STR"],["Diogo Dalot",80,"DEF"],["Rúben Neves",80,"CM"],["Rui Patrício",76,"GK"],["Cristiano Ronaldo",74,"STR"]]},
+"Senegal":{"2018":[["Sadio Mané",91,"WIN"],["Kalidou Koulibaly",87,"DEF"],["Idrissa Gueye",82,"CM"],["Khadim N'Diaye",78,"GK"],["Cheikhou Kouyaté",78,"CM"],["Ismaïla Sarr",77,"WIN"],["Youssouf Sabaly",73,"DEF"],["Mbaye Niang",72,"STR"],["Alfred Gomis",71,"GK"],["Alfred Ndiaye",71,"CM"],["Lamine Gassama",69,"DEF"],["Moussa Konaté",68,"STR"]],"2022":[["Sadio Mané",89,"WIN"],["Kalidou Koulibaly",88,"DEF"],["Edouard Mendy",86,"GK"],["Idrissa Gueye",82,"CM"],["Ismaïla Sarr",82,"WIN"],["Abdou Diallo",78,"DEF"],["Boulaye Dia",78,"STR"],["Pape Matar Sarr",76,"WIN"],["Youssouf Sabaly",74,"DEF"],["Alfred Gomis",73,"GK"],["Cheikhou Kouyaté",73,"CM"],["Nicolas Jackson",73,"STR"],["Fodé Ballo-Touré",71,"DEF"],["Nampalys Mendy",71,"CM"],["Famara Diédhiou",70,"STR"]],"2026":[["Kalidou Koulibaly",84,"DEF"],["Ismaïla Sarr",84,"WIN"],["Edouard Mendy",83,"GK"],["Nicolas Jackson",83,"STR"],["Sadio Mané",82,"CM"],["Pape Matar Sarr",81,"CM"],["Boulaye Dia",80,"STR"],["Idrissa Gueye",79,"CM"],["Lamine Camara",78,"CM"],["Abdou Diallo",77,"DEF"],["Seny Dieng",75,"GK"],["Ismail Jakobs",73,"DEF"],["Krepin Diatta",73,"WIN"],["Formose Mendy",71,"DEF"],["Cheikhou Kouyaté",71,"CM"],["Habib Diallo",70,"STR"]]},
+"Spain":{"2006":[["Carlos Puyol",88,"DEF"],["Xavi",88,"CM"],["Iker Casillas",87,"GK"],["Fernando Torres",86,"STR"],["Xabi Alonso",85,"CM"],["Sergio Ramos",84,"DEF"],["Andrés Iniesta",84,"CM"],["David Villa",84,"STR"],["Santiago Cañizares",77,"GK"],["Joan Capdevila",76,"DEF"],["Joaquín",76,"WIN"],["David Albelda",75,"CM"],["Fernando Morientes",75,"STR"],["Marcos Senna",74,"CM"],["Michel Salgado",72,"DEF"]],"2010":[["Andrés Iniesta",96,"CM"],["Xavi",95,"CM"],["Iker Casillas",93,"GK"],["David Villa",93,"STR"],["Carlos Puyol",89,"DEF"],["Xabi Alonso",89,"CM"],["Sergio Ramos",88,"DEF"],["Gerard Piqué",87,"DEF"],["Sergio Busquets",87,"CM"],["Víctor Valdés",83,"GK"],["Fernando Torres",80,"STR"],["Joan Capdevila",79,"DEF"],["Pedro",79,"WIN"],["Jesús Navas",74,"WIN"],["Alvaro Negredo",70,"STR"]],"2014":[["Andrés Iniesta",89,"CM"],["Sergio Busquets",88,"CM"],["Sergio Ramos",87,"DEF"],["Xabi Alonso",86,"CM"],["Gerard Piqué",85,"DEF"],["Jordi Alba",83,"DEF"],["Cesc Fàbregas",83,"CM"],["David Villa",83,"STR"],["Diego Costa",81,"STR"],["Iker Casillas",80,"GK"],["David de Gea",80,"GK"],["Juan Mata",80,"CM"],["Pedro",77,"WIN"],["Juanfran",76,"DEF"],["Fernando Torres",76,"STR"],["Jesús Navas",75,"WIN"]],"2018":[["Sergio Ramos",88,"DEF"],["Sergio Busquets",88,"CM"],["David de Gea",87,"GK"],["David Silva",84,"CM"],["Gerard Piqué",83,"DEF"],["Jordi Alba",83,"DEF"],["Isco",83,"WIN"],["Andrés Iniesta",83,"CM"],["Dani Carvajal",82,"DEF"],["Diego Costa",82,"STR"],["Marco Asensio",81,"WIN"],["Koke",78,"CM"],["Kepa Arrizabalaga",77,"GK"],["Alvaro Morata",77,"STR"],["Lucas Vázquez",73,"WIN"],["Rodrigo Moreno",72,"STR"]],"2022":[["Rodri",91,"CM"],["Pedri",89,"CM"],["Gavi",87,"CM"],["Aymeric Laporte",84,"DEF"],["Sergio Busquets",83,"CM"],["Unai Simón",82,"GK"],["Dani Olmo",82,"WIN"],["Dani Carvajal",80,"DEF"],["Ferran Torres",80,"WIN"],["Eric García",78,"DEF"],["Alvaro Morata",78,"STR"],["Jordi Alba",77,"DEF"],["Ansu Fati",75,"STR"],["Robert Sánchez",74,"GK"]],"2026":[["Rodri",95,"CM"],["Lamine Yamal",95,"WIN"],["Pedri",90,"CM"],["Nico Williams",87,"WIN"],["Unai Simón",84,"GK"],["Pau Cubarsí",84,"DEF"],["Dani Carvajal",84,"DEF"],["Alejandro Grimaldo",84,"DEF"],["Dani Olmo",84,"CM"],["David Raya",83,"GK"],["Martín Zubimendi",83,"CM"],["Aymeric Laporte",82,"DEF"],["Mikel Oyarzabal",81,"STR"],["Fabián Ruiz",80,"CM"],["Ferran Torres",78,"STR"],["Alvaro Morata",77,"STR"]]},
+"USA":{"2006":[["Landon Donovan",83,"WIN"],["Kasey Keller",78,"GK"],["Tim Howard",76,"GK"],["Carlos Bocanegra",76,"DEF"],["Claudio Reyna",75,"CM"],["Oguchi Onyewu",74,"DEF"],["DaMarcus Beasley",74,"WIN"],["Brian McBride",73,"STR"],["Steve Cherundolo",72,"DEF"],["Pablo Mastroeni",72,"CM"],["Eddie Pope",71,"DEF"],["Eddie Johnson",68,"STR"],["Ben Olsen",66,"CM"],["Josh Wolff",64,"STR"]],"2010":[["Landon Donovan",85,"WIN"],["Tim Howard",83,"GK"],["Clint Dempsey",82,"CM"],["Carlos Bocanegra",78,"DEF"],["Michael Bradley",78,"CM"],["Oguchi Onyewu",76,"DEF"],["Steve Cherundolo",72,"DEF"],["DaMarcus Beasley",72,"WIN"],["Jozy Altidore",72,"STR"],["Maurice Edu",71,"CM"],["Marcus Hahnemann",68,"GK"],["Jonathan Bornstein",66,"DEF"],["Robbie Findley",63,"STR"]],"2014":[["Tim Howard",87,"GK"],["Clint Dempsey",82,"CM"],["Michael Bradley",79,"CM"],["Brad Guzan",77,"GK"],["Matt Besler",75,"DEF"],["Jermaine Jones",74,"CM"],["Omar Gonzalez",73,"DEF"],["DaMarcus Beasley",72,"DEF"],["Kyle Beckerman",72,"CM"],["DeAndre Yedlin",71,"DEF"],["Jozy Altidore",70,"STR"],["Chris Wondolowski",70,"STR"],["Julian Green",69,"WIN"]],"2022":[["Christian Pulisic",84,"WIN"],["Tyler Adams",80,"CM"],["Matt Turner",78,"GK"],["Yunus Musah",78,"CM"],["Antonee Robinson",77,"DEF"],["Sergiño Dest",77,"DEF"],["Walker Zimmerman",74,"DEF"],["Gio Reyna",74,"CM"],["Timothy Weah",74,"WIN"],["Jesus Ferreira",71,"STR"],["Aaron Long",70,"DEF"],["Josh Sargent",70,"STR"],["Jordan Pefok",69,"STR"],["Ethan Horvath",67,"GK"]],"2026":[["Christian Pulisic",87,"WIN"],["Tyler Adams",83,"CM"],["Yunus Musah",82,"CM"],["Folarin Balogun",82,"STR"],["Antonee Robinson",80,"DEF"],["Weston McKennie",80,"CM"],["Chris Richards",79,"DEF"],["Matt Freese",78,"GK"],["Timothy Weah",78,"WIN"],["Gio Reyna",77,"CM"],["Matt Turner",76,"GK"],["Sergiño Dest",76,"DEF"],["Ricardo Pepi",76,"STR"],["Brenden Aaronson",74,"CM"],["Patrick Schulte",73,"GK"],["Josh Sargent",72,"STR"],["Tim Ream",71,"DEF"]]},
+"Uruguay":{"2006":[["Diego Forlán",83,"CM,STR"],["Diego Lugano",78,"DEF"],["Pablo García",73,"CM"],["Alvaro Recoba",73,"CM,STR"],["Fabián Carini",72,"GK"],["Pablo Cavallero",72,"GK"],["Carlos Diogo",70,"DEF"],["Gonzalo Sorondo",68,"DEF"],["Rodrigo Tello",67,"CM"],["Marcelo Zalayeta",67,"STR"]],"2010":[["Diego Forlán",90,"CM,STR"],["Luis Suárez",86,"STR"],["Fernando Muslera",82,"GK"],["Diego Godín",82,"DEF"],["Diego Lugano",80,"DEF"],["Martín Cáceres",79,"DEF"],["Edinson Cavani",79,"STR"],["Diego Pérez",73,"CM"],["Egidio Arévalo Ríos",72,"CM"],["Alvaro Pereira",72,"WIN"],["Jorge Fucile",71,"DEF"],["Sebastián Eguren",70,"CM"],["Juan Castillo",66,"GK"]],"2014":[["Luis Suárez",92,"STR"],["Diego Godín",88,"DEF"],["Edinson Cavani",84,"STR"],["Fernando Muslera",83,"GK"],["Martín Cáceres",82,"DEF"],["José María Giménez",79,"DEF"],["Diego Forlán",76,"CM,STR"],["Alvaro Pereira",72,"DEF"],["Gastón Ramírez",72,"CM"],["Cristhian Stuani",72,"WIN"],["Egidio Arévalo Ríos",70,"CM"],["Martín Silva",68,"GK"],["Alvaro González",68,"CM"]],"2018":[["Diego Godín",88,"DEF"],["Luis Suárez",88,"STR"],["Edinson Cavani",85,"STR"],["Fernando Muslera",83,"GK"],["José María Giménez",83,"DEF"],["Lucas Torreira",78,"CM"],["Rodrigo Bentancur",77,"CM"],["Matías Vecino",77,"CM"],["Giorgian de Arrascaeta",76,"CM"],["Martín Cáceres",75,"DEF"],["Nahitan Nández",73,"WIN"],["Cristhian Stuani",72,"STR"],["Guillermo Varela",71,"DEF"],["Martín Campaña",68,"GK"]],"2022":[["Federico Valverde",88,"CM"],["José María Giménez",82,"DEF"],["Rodrigo Bentancur",82,"CM"],["Giorgian de Arrascaeta",82,"CM"],["Darwin Núñez",82,"STR"],["Luis Suárez",80,"STR"],["Sergio Rochet",78,"GK"],["Lucas Torreira",78,"CM"],["Manuel Ugarte",77,"CM"],["Fernando Muslera",76,"GK"],["Diego Godín",76,"DEF"],["Mathías Olivera",76,"DEF"],["Edinson Cavani",73,"STR"],["Guillermo Varela",72,"DEF"],["Facundo Pellistri",72,"WIN"]],"2026":[["Federico Valverde",89,"CM"],["Ronald Araújo",86,"DEF"],["Darwin Núñez",86,"STR"],["Manuel Ugarte",84,"CM"],["José María Giménez",83,"DEF"],["Giorgian de Arrascaeta",83,"CM"],["Rodrigo Bentancur",81,"CM"],["Sergio Rochet",80,"GK"],["Mathías Olivera",79,"DEF"],["Lucas Torreira",77,"CM"],["Facundo Pellistri",75,"WIN"],["Luis Suárez",75,"STR"],["Santiago Borré",72,"STR"],["Fernando Muslera",71,"GK"],["Guillermo Varela",71,"DEF"]]}
+};
+
+const SLOTS = [
+  { id:"GK", label:"Goalkeeper", short:"GK", emoji:"\u{1F9E4}", accepts:["GK"] },
+  { id:"DEF", label:"Defender", short:"DEF", emoji:"\u{1F6E1}\u{FE0F}", accepts:["DEF"] },
+  { id:"CM", label:"Midfielder", short:"CM", emoji:"\u{2699}\u{FE0F}", accepts:["CM"] },
+  { id:"WIN", label:"Winger", short:"WIN", emoji:"\u{26A1}", accepts:["WIN"] },
+  { id:"STR", label:"Striker", short:"STR", emoji:"\u{26BD}", accepts:["STR"] },
+  { id:"WC", label:"Wildcard", short:"WC", emoji:"\u{1F0CF}", accepts:["GK","DEF","CM","WIN","STR"] },
+];
+
+const COUNTRIES = Object.keys(DB_RAW).sort();
+const ALL_YEARS = [2006,2010,2014,2018,2022,2026];
+const FLAGS = {"Argentina":"\u{1F1E6}\u{1F1F7}","Brazil":"\u{1F1E7}\u{1F1F7}","France":"\u{1F1EB}\u{1F1F7}","Germany":"\u{1F1E9}\u{1F1EA}","Spain":"\u{1F1EA}\u{1F1F8}","Portugal":"\u{1F1F5}\u{1F1F9}","England":"\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}","Netherlands":"\u{1F1F3}\u{1F1F1}","Italy":"\u{1F1EE}\u{1F1F9}","Croatia":"\u{1F1ED}\u{1F1F7}","Belgium":"\u{1F1E7}\u{1F1EA}","Uruguay":"\u{1F1FA}\u{1F1FE}","Morocco":"\u{1F1F2}\u{1F1E6}","Senegal":"\u{1F1F8}\u{1F1F3}","Colombia":"\u{1F1E8}\u{1F1F4}","Japan":"\u{1F1EF}\u{1F1F5}","USA":"\u{1F1FA}\u{1F1F8}","Norway":"\u{1F1F3}\u{1F1F4}","Canada":"\u{1F1E8}\u{1F1E6}","Mexico":"\u{1F1F2}\u{1F1FD}"};
+const POS_COLOR = {"GK":"#f59e0b","DEF":"#3b82f6","CM":"#10b981","WIN":"#8b5cf6","STR":"#f97316"};
+const POS_NAME = {"GK":"Goalkeepers","DEF":"Defenders","CM":"Midfielders","WIN":"Wingers","STR":"Strikers"};
+
+function ratingColor(r) { return r>=85?"#f59e0b":r>=80?"#10b981":r>=75?"#3b82f6":"#6b7280"; }
+function ratingTier(r) { return r>=85?"World Class":r>=80?"Great":r>=75?"Good":"Squad"; }
+function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function getYears(c) { return Object.keys(DB_RAW[c]||{}).map(Number).sort(); }
+function getSquad(c,y) { return (DB_RAW[c]?.[String(y)]||[]).map(([name,rating,pos])=>({name,rating,positions:pos.split(",")})); }
+
+function eligibleSlots(player, squad) {
+  return SLOTS.map((s,i)=>({s,i})).filter(({s,i})=> squad[i]===null && s.accepts.some(a=>player.positions.includes(a)));
+}
+
+function gaussRnd(m,s) { let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random(); return m+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+function simulate(squad) {
+  const filled = squad.filter(Boolean);
+  const ratings = filled.map(p => p.slotId==="WC" ? p.rating*1.05 : p.rating);
+  const avg = ratings.reduce((a,b)=>a+b,0)/ratings.length;
+  const min = Math.min(...ratings);
+  const penalty = min<76 ? (76-min)*0.3 : 0;
+  const score = avg - penalty + gaussRnd(0,5);
+  if(score>=98) return {label:"World Cup Winner", emoji:"\u{1F3C6}", tier:1, col:"var(--gold)", desc:"A perfect storm of elite talent. This squad is World Cup royalty."};
+  if(score>=88) return {label:"World Cup Final", emoji:"\u{1F948}", tier:2, col:"#94a3b8", desc:"An elite squad that reached the final. One moment from immortality."};
+  if(score>=84) return {label:"Semi-Final", emoji:"\u{1F949}", tier:3, col:"#cd7f32", desc:"A genuinely strong team that fell just short in the semis."};
+  if(score>=80) return {label:"Quarter-Final", emoji:"\u{26BD}", tier:4, col:"var(--green)", desc:"Solid but not quite elite \u{2014} a weak link ended the run in the quarters."};
+  if(score>=76) return {label:"Round of 16", emoji:"\u{1F3BD}", tier:5, col:"var(--blue)", desc:"Survived the group but not the knockout pressure."};
+  if(score>=72) return {label:"Group Stage Exit", emoji:"\u{274C}", tier:6, col:"var(--orange)", desc:"Gaps in the squad showed when it mattered."};
+  return {label:"Bottom of Group", emoji:"\u{1F480}", tier:7, col:"var(--red)", desc:"Back to the drawing board \u{2014} chase bigger names next time."};
+}
+
+const promoHtml = '<a href="https://winballon.com" class="promo-box"><div class="promo-title">Try <span>WinBallon</span></div><div class="promo-sub">the soccer version</div></a>';
+
+let currentGame = null;
+
+function showStartScreen() {
+  document.getElementById('app').innerHTML = `
+    <header><h1>WorldCup-0</h1><p>Build your ultimate World Cup squad</p></header>
+    <div class="how-to-play">
+      <h3>How to Play</h3>
+      <ol>
+        <li><strong>6 spins</strong> give you a random nation + World Cup year</li>
+        <li>Pick any <strong>player from that squad</strong> to fill a position</li>
+        <li>Positions: <strong>GK \u{00B7} DEF \u{00B7} CM \u{00B7} WIN \u{00B7} STR \u{00B7} Wildcard</strong></li>
+        <li>Higher ratings = <strong>better squad result</strong></li>
+        <li><strong>1 free respin</strong> per pick, then watch an ad</li>
+        <li>Your squad is simulated — <strong>can you win the World Cup?</strong></li>
+      </ol>
+    </div>
+    <button class="btn-start" onclick="startGame()">Start Game</button>
+    <div style="text-align:center;margin-top:12px;font-size:0.7rem;color:var(--muted)">${COUNTRIES.length} nations \u{00B7} 2006–2026</div>
+  `;
+}
+
+function startGame() {
+  currentGame = {
+    squad: Array(6).fill(null),
+    country: null, year: null,
+    displayCountry: '', displayYear: '',
+    spinning: false, feedback: null,
+    picked: null, respinUsed: false, adReady: false, finished: false,
+  };
+  doSpin();
+}
+
+function doSpin(lockC, lockY) {
+  const g = currentGame;
+  g.spinning = true;
+  g.picked = null;
+
+  const finalC = lockC || rand(COUNTRIES);
+  const ys = getYears(finalC);
+  const finalY = (lockY && ys.includes(lockY)) ? lockY : rand(ys);
+
+  let ticks = 0;
+  const maxTicks = 14;
+
+  function tick() {
+    ticks++;
+    g.displayCountry = lockC || rand(COUNTRIES);
+    g.displayYear = lockY || rand(ALL_YEARS);
+    renderGame();
+    if (ticks < maxTicks) {
+      setTimeout(tick, 50 + ticks * 18);
+    } else {
+      g.displayCountry = finalC;
+      g.displayYear = finalY;
+      g.country = finalC;
+      g.year = finalY;
+      g.spinning = false;
+      g.respinUsed = !!lockC || !!lockY ? g.respinUsed : false;
+      if (!lockC && !lockY) { g.respinUsed = false; g.adReady = false; }
+      renderGame();
+    }
+  }
+  tick();
+}
+
+function selectPlayer(idx) {
+  const g = currentGame;
+  if (g.spinning || g.finished) return;
+  const squad = getSquad(g.country, g.year);
+  const player = squad[idx];
+  const elig = eligibleSlots(player, g.squad);
+  if (elig.length === 0) return;
+  if (elig.length === 1) { assignToSlot(player, elig[0].i); }
+  else { g.picked = { player, eligible: elig }; renderGame(); }
+}
+
+function assignToSlot(player, slotIdx) {
+  const g = currentGame;
+  g.squad[slotIdx] = { ...player, slotId: SLOTS[slotIdx].id, country: g.country, year: g.year };
+  g.picked = null;
+  g.feedback = { name: player.name, slot: SLOTS[slotIdx].label, rating: player.rating };
+
+  const pickCount = g.squad.filter(Boolean).length;
+  if (pickCount >= 6) {
+    g.finished = true;
+    renderGame();
+  } else {
+    renderGame();
+    setTimeout(() => doSpin(), 1500);
+  }
+}
+
+function cancelPick() { currentGame.picked = null; renderGame(); }
+
+function respinCountry() {
+  const g = currentGame;
+  if (!g.respinUsed) g.respinUsed = true;
+  else g.adReady = false;
+  doSpin(null, g.year);
+}
+function respinYear() {
+  const g = currentGame;
+  if (!g.respinUsed) g.respinUsed = true;
+  else g.adReady = false;
+  doSpin(g.country, null);
+}
+
+function showRewardedAd() {
+  const overlay = document.createElement('div');
+  overlay.id = 'ad-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;font-family:inherit';
+  overlay.innerHTML = '<div style="font-size:0.8rem;color:#aaa;margin-bottom:12px">ADVERTISEMENT</div><div style="width:300px;height:250px;background:#222;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#555;font-size:0.9rem;margin-bottom:20px">Your rewarded ad here</div><div id="ad-countdown" style="font-size:1.2rem;font-weight:700">5</div><div style="font-size:0.75rem;color:#888;margin-top:6px">Respin unlocks when ad finishes</div>';
+  document.body.appendChild(overlay);
+  let seconds = 5;
+  const el = overlay.querySelector('#ad-countdown');
+  const timer = setInterval(() => {
+    seconds--;
+    el.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      overlay.remove();
+      currentGame.adReady = true;
+      renderGame();
+    }
+  }, 1000);
+}
+
+function restartGame() { startGame(); }
+
+function renderGame() {
+  const g = currentGame;
+  const pickCount = g.squad.filter(Boolean).length;
+  const canRespin = !g.spinning && !g.finished && !g.picked && (!g.respinUsed || g.adReady);
+  const needAd = !g.spinning && !g.finished && !g.picked && g.respinUsed && !g.adReady;
+  let html = '';
+
+  html += '<header><h1>WorldCup-0</h1><p>Build your ultimate World Cup squad</p></header>';
+
+  // Score bar
+  html += '<div class="score-bar"><div class="score-section"><div class="score-label">Pick</div><div class="score-value ' + (pickCount>=6?'good':'') + '">' + Math.min(pickCount+1,6) + '/6</div></div><div class="progress-dots">';
+  SLOTS.forEach((_, i) => {
+    html += '<div class="dot ' + (g.squad[i]?'done':'') + ' ' + (i===pickCount&&!g.finished?'active':'') + '"></div>';
+  });
+  html += '</div><div class="score-section"><div class="score-label">Slots</div><div class="score-value">' + (6-pickCount) + '</div></div></div>';
+
+  // Feedback
+  if (g.feedback && !g.finished) {
+    html += '<div class="feedback-bar">' + g.feedback.name + ' \u{2192} ' + g.feedback.slot + ': <span class="fb-rank" style="color:' + ratingColor(g.feedback.rating) + '">' + ratingTier(g.feedback.rating) + '</span></div>';
+  }
+
+  // Country card
+  if (!g.finished) {
+    const flag = FLAGS[g.displayCountry] || '\u{1F30D}';
+    const squadSize = (!g.spinning && g.country) ? getSquad(g.country, g.year).length : 0;
+    html += '<div class="country-card ' + (g.spinning?'spinning':'') + '"><div class="flag">' + flag + '</div><div class="country-name">' + (g.displayCountry||'…') + '</div><div class="year-label">' + (g.displayYear||'…') + '</div>';
+    if (!g.spinning && squadSize) html += '<div class="squad-count">' + squadSize + ' players available</div>';
+    html += '</div>';
+  }
+
+  // Slot choice (multi-position player)
+  if (g.picked) {
+    html += '<div class="slot-choice"><div class="slot-choice-title">' + g.picked.player.name + ' can play multiple positions:</div><div class="slot-btns">';
+    g.picked.eligible.forEach(({s,i}) => {
+      html += '<button class="slot-btn" onclick="assignToSlot({name:\'' + g.picked.player.name.replace(/'/g,"\\'") + '\',rating:' + g.picked.player.rating + ',positions:' + JSON.stringify(g.picked.player.positions) + '},' + i + ')" style="border-color:' + (POS_COLOR[s.id]||'var(--border)') + '">' + s.emoji + ' ' + s.label + '</button>';
+    });
+    html += '<button class="slot-btn" onclick="cancelPick()">Cancel</button></div></div>';
+  }
+
+  // Player selection list
+  if (!g.spinning && !g.finished && g.country && !g.picked) {
+    const squad = getSquad(g.country, g.year);
+    ["GK","DEF","CM","WIN","STR"].forEach(pos => {
+      const group = squad.map((p,idx)=>({...p,idx})).filter(p => p.positions.includes(pos));
+      if (!group.length) return;
+      html += '<div class="pos-group"><div class="pos-header" style="color:' + POS_COLOR[pos] + '">' + POS_NAME[pos] + '</div>';
+      group.forEach(p => {
+        const elig = eligibleSlots(p, g.squad);
+        const playable = elig.length > 0;
+        html += '<div class="pick-row ' + (playable?'':'disabled') + '" onclick="' + (playable?'selectPlayer('+p.idx+')':'') + '"><div class="pr-rating" style="color:' + ratingColor(p.rating) + '">' + ratingTier(p.rating) + '</div><div class="pr-name">' + p.name + (p.positions.length>1?' <span style="font-size:0.6rem;color:var(--muted);font-weight:600">(' + p.positions.join('/') + ')</span>':'') + '</div><div class="pr-pos" style="background:' + POS_COLOR[pos] + '">' + pos + '</div></div>';
+      });
+      html += '</div>';
+    });
+  }
+
+  // Respin / Ad / Restart
+  if (!g.spinning && !g.finished && !g.picked && g.country) {
+    if (canRespin) {
+      html += '<div class="respin-row"><button class="respin-btn" onclick="respinCountry()">\u{1F504} Respin Country</button><button class="respin-btn" onclick="respinYear()">\u{1F4C5} Respin Year</button></div>';
+      if (!g.respinUsed) html += '<div style="text-align:center;font-size:0.65rem;color:var(--muted);margin-bottom:8px">1 free respin this pick</div>';
+    }
+    if (needAd) {
+      html += '<button class="respin-btn" onclick="showRewardedAd()">\u{1F4FA} Watch ad to respin</button>';
+    }
+    html += '<button class="btn-restart" onclick="restartGame()">Restart</button>';
+    html += promoHtml;
+  }
+
+  // Squad slots
+  if (pickCount > 0 || g.finished) {
+    html += '<div class="squad-slots"><div class="slots-title">Your Squad</div>';
+    SLOTS.forEach((slot, i) => {
+      const p = g.squad[i];
+      html += '<div class="slot-row ' + (p?'':'empty') + '"><div class="sr-emoji">' + slot.emoji + '</div><div class="sr-label">' + slot.short + '</div><div class="sr-info">';
+      if (p) {
+        html += '<div class="sr-name">' + p.name + '</div><div class="sr-meta">' + (FLAGS[p.country]||'') + ' ' + p.country + ' ' + p.year + '</div>';
+      } else {
+        html += '<div class="sr-name" style="color:var(--muted)">Empty</div>';
+      }
+      html += '</div>';
+      if (p) html += '<div class="sr-rating" style="color:' + ratingColor(p.rating) + '">' + ratingTier(p.rating) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Final screen
+  if (g.finished) {
+    const result = simulate(g.squad);
+    html += '<div class="final-screen"><div class="final-emoji">' + result.emoji + '</div><h2 style="color:' + result.col + '">' + result.label + '</h2><div class="final-desc">' + result.desc + '</div>';
+    html += '<button class="btn-primary" onclick="startGame()">Play Again</button>' + promoHtml + '</div>';
+  }
+
+  document.getElementById('app').innerHTML = html;
+}
+
+showStartScreen();
+</script>
+</body>
+</html>
