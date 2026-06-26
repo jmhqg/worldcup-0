@@ -36,6 +36,8 @@
   .country-card { background: var(--surface); border-radius: 18px; padding: 28px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-bottom: 12px; border: 2.5px solid var(--accent); transition: all 0.2s; }
   .country-card.spinning { border-color: var(--gold); }
   .country-card .flag { font-size: 52px; margin-bottom: 6px; transition: filter 0.1s; }
+  .country-card .flag img.emoji { width: 52px; height: 52px; vertical-align: middle; }
+  img.emoji { width: 1em; height: 1em; vertical-align: -0.1em; }
   .country-card.spinning .flag { filter: blur(3px); }
   .country-card .country-name { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
   .country-card.spinning .country-name { filter: blur(1.5px); opacity: 0.7; }
@@ -105,6 +107,7 @@
   .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+<script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="app"><div class="loading"><div class="spinner"></div>Loading...</div></div>
@@ -207,6 +210,7 @@ function showStartScreen() {
     <button class="btn-start" onclick="startGame()">Start Game</button>
     <div style="text-align:center;margin-top:12px;font-size:0.7rem;color:var(--muted)">${COUNTRIES.length} nations \u{00B7} 2006\u20132026</div>
   `;
+  twemoji.parse(document.getElementById('app'));
 }
 
 function startGame() {
@@ -385,6 +389,7 @@ function renderGame() {
   }
 
   document.getElementById('app').innerHTML = html;
+  twemoji.parse(document.getElementById('app'));
 }
 
 showStartScreen();
